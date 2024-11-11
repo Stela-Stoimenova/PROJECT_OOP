@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstring>
 #include <string.h>
+#include <string>
 
 int main() 
 {
@@ -16,5 +17,5 @@ int main()
 			isRunning = false;
 		}
 	}
-	//
+	
 }
