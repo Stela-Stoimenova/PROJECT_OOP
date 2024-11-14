@@ -42,6 +42,7 @@ public:
 			}
 			else
 			{
+				// Bogdan's code
 				auto pos = userCommand.find(delimiter);
 				cout << "First word is: " << userCommand.substr(0, pos) << endl;
 				while (pos != string::npos) {
