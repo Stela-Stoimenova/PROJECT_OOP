@@ -8,13 +8,16 @@ using namespace std;
 class Input
 {
 private:
-	bool isRunning = true;
+	
 	string userCommand = "";
 	string delimiter = " ";
 	string* commandList = nullptr;
+	
 	// int noCommands = 0;
 
 public:
+	bool isRunning = true;
+
 	/*void addToCommandList(string word, int noCommands)
 	{
 		string* listCopy = new string[noCommands];
@@ -32,30 +35,28 @@ public:
 	}*/
 	void readInput()
 	{
-		while (isRunning) {
-			cout << endl << "Enter a command: ";
-			getline(cin, userCommand);
+		cout << endl << "Enter a command: ";
+		getline(cin, userCommand);
 
-			// Exiting the application
-			if (userCommand == string("0")) {
-				isRunning = false;
-			}
-			else
-			{
-				// Bogdan's code
-				auto pos = userCommand.find(delimiter);
-				cout << "First word is: " << userCommand.substr(0, pos) << endl;
-				while (pos != string::npos) {
-					cout << userCommand.substr(0, pos) << " ";
-					userCommand.erase(0, pos + delimiter.length());
-					pos = userCommand.find(delimiter);
-					
-				}
-				pos = userCommand.find('\0');
+		// Exiting the application if user command is '0'
+		if (userCommand == string("0")) {
+			this->isRunning = false;
+			cout << endl << "Exited the program successfully.";
+		}
+		else
+		{
+			// Bogdan's code
+			auto pos = userCommand.find(delimiter);
+			cout << "First word is: " << userCommand.substr(0, pos) << endl;
+			while (pos != string::npos) {
 				cout << userCommand.substr(0, pos) << " ";
 				userCommand.erase(0, pos + delimiter.length());
-
+				pos = userCommand.find(delimiter);
+				
 			}
+			pos = userCommand.find('\0');
+			cout << userCommand.substr(0, pos) << " ";
+			userCommand.erase(0, pos + delimiter.length());
 		}
 	}
 };
@@ -74,7 +75,13 @@ int main()
 	//		isRunning = false;
 	//	}
 	//}
+
 	Input i1;
-	i1.readInput();
+	while(i1.isRunning)
+	{
+		i1.readInput();
+	}
+	
+	
 }
 //
