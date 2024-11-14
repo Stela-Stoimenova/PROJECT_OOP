@@ -5,18 +5,24 @@
 
 using namespace std;
 
+
+//The code reads a command from the user, splits the command into individual words,
+// and displays each word one by one. It also has an exit condition: if the user enters "0",
+// the program terminates.
 class Input
 {
 private:
 	
-	string userCommand = "";
-	string delimiter = " ";
+	string userCommand = ""; //store user's input
+	string delimiter = " "; //identify spaces between words
 	string* commandList = nullptr;
 	
 	// int noCommands = 0;
 
 public:
-	bool isRunning = true;
+	bool isRunning = true; 
+	//in order to keep the code running
+	// allowing the program to keep running until the user decides to exit
 
 	/*void addToCommandList(string word, int noCommands)
 	{
@@ -84,4 +90,3 @@ int main()
 	
 	
 }
-//
