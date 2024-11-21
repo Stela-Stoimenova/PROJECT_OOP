@@ -10,7 +10,7 @@ public:
     
 private:
     void createTableCommand(const string& command);
-  
+    void dropTableCommand(const string& command);
     void displayTableCommand(const string& command);
-    std::string getName(const string& command);
+    string getName(const string& command);
 };

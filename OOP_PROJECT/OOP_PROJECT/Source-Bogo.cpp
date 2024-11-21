@@ -1,10 +1,10 @@
 #include <iostream>
+#include <fstream>
 #include <cstring>
 #include <string.h>
 #include<string>
 
 using namespace std;
-
 
 //The code reads a command from the user, splits the command into individual words,
 // and displays each word one by one. It also has an exit condition: if the user enters "0",
@@ -15,12 +15,11 @@ private:
 	
 	string userCommand = ""; //store user's input
 	string delimiter = " "; //identify spaces between words
-	string* commandList = nullptr;
-	
-	// int noCommands = 0;
+	bool isRunning = true; 
+	string firstWord = "";
 
 public:
-	bool isRunning = true; 
+	
 	//in order to keep the code running
 	// allowing the program to keep running until the user decides to exit
 
@@ -46,46 +45,62 @@ public:
 
 		// Exiting the application if user command is '0'
 		if (userCommand == string("0")) {
-			this->isRunning = false;
 			cout << endl << "Exited the program successfully.";
+			this->isRunning = false;
 		}
 		else
 		{
 			// Bogdan's code
 			auto pos = userCommand.find(delimiter);
 			cout << "First word is: " << userCommand.substr(0, pos) << endl;
+			this->firstWord = userCommand.substr(0, pos);
+
 			while (pos != string::npos) {
 				cout << userCommand.substr(0, pos) << " ";
+
 				userCommand.erase(0, pos + delimiter.length());
 				pos = userCommand.find(delimiter);
 				
 			}
 			pos = userCommand.find('\0');
-			cout << userCommand.substr(0, pos) << " ";
+			//cout << userCommand.substr(0, pos) << " ";
+
+			cout << userCommand.substr(0, pos);
 			userCommand.erase(0, pos + delimiter.length());
 		}
 	}
+	// friend istream& operator>>(istream& in, Input& input) {
+	// 	cout << "Input a command (0 to exit): ";
+	// 	in >> input.userCommand;
+	// }
+	inline bool getIsRunning() {return this->isRunning;}
+	inline string getFirstWord() {return this->firstWord;}
+	inline string getDelimiter() {return this->delimiter;}
+	inline string getUserCommand() {return this->userCommand;}
 };
 
 int main()
 {
-	//bool isRunning = true;
-	//std::string userCommand;
-
-	//while (isRunning) {
-	//	std::cout << std::endl << "Enter a command: ";
-	//	getline(std::cin, userCommand);
-
-	//	// Exiting the application
-	//	if (userCommand == std::string("0")) {
-	//		isRunning = false;
-	//	}
-	//}
-
 	Input i1;
-	while(i1.isRunning)
+	while(i1.getIsRunning())
 	{
 		i1.readInput();
+		if(i1.getFirstWord() == "CREATE") {
+			// Create table
+			auto pos = i1.getUserCommand().find(" ");
+			i1.getUserCommand().erase(0, pos + i1.getDelimiter().length());
+			pos = i1.getUserCommand().find(" ");
+			i1.getUserCommand().erase(0, pos + i1.getDelimiter().length());
+			pos = i1.getUserCommand().find(" ");
+
+			string fileName = i1.getUserCommand().substr(0, pos);
+			
+			ofstream f(fileName + ".txt");
+			// Read table
+
+
+			f.close();
+		}
 	}
 	
 	

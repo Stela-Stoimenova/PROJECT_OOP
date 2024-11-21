@@ -24,7 +24,8 @@ void Processor::createTableCommand(const string& command) {
     }
     
     void Processor::displayTableCommand(const string& command) {
-}
+
+    }
 
     Table newTable(tableName);
     
