@@ -79,25 +79,39 @@ public:
 	inline string getUserCommand() {return this->userCommand;}
 };
 
+// function to turn strings to uppercase
+string upper(string str){
+	for(int i{};i<str.size();++i) {
+		if(str[i] >= 'a' && str[i] <= 'z')
+			str[i] -= 32;
+	}
+	return str;
+}
+
 int main()
 {
 	Input i1;
 	while(i1.getIsRunning())
 	{
 		i1.readInput();
-		if(i1.getFirstWord() == "CREATE") {
+		if(upper(i1.getFirstWord()) == "CREATE") {
 			// Create table
+			
+			// Gets second word (table)
 			auto pos = i1.getUserCommand().find(" ");
 			i1.getUserCommand().erase(0, pos + i1.getDelimiter().length());
 			pos = i1.getUserCommand().find(" ");
+
+			// Gets third word (table name)
 			i1.getUserCommand().erase(0, pos + i1.getDelimiter().length());
 			pos = i1.getUserCommand().find(" ");
 
-			string fileName = i1.getUserCommand().substr(0, pos);
-			
-			ofstream f(fileName + ".txt");
-			// Read table
+			string tableName = i1.getUserCommand().substr(0, pos);
 
+			ofstream f(tableName + ".txt");
+
+			// Read table
+			
 
 			f.close();
 		}
