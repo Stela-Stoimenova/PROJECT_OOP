@@ -1,11 +1,22 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
-#include <string.h>
-#include<string>
+#include <string>
 
 using namespace std;
+class Table {
+	private:
+		string name="";
+	public:
+		Table(string name) : name(name) {
+			
+		}
 
+		void createTable() {
+			ofstream f(this->name + ".txt");
+			f.close();
+		}
+};
 //The code reads a command from the user, splits the command into individual words,
 // and displays each word one by one. It also has an exit condition: if the user enters "0",
 // the program terminates.
@@ -52,8 +63,8 @@ public:
 		{
 			// Bogdan's code
 			auto pos = userCommand.find(delimiter);
-			cout << "First word is: " << userCommand.substr(0, pos) << endl;
 			this->firstWord = userCommand.substr(0, pos);
+			cout << "First word is: " << this->firstWord << endl;
 
 			while (pos != string::npos) {
 				cout << userCommand.substr(0, pos) << " ";
@@ -94,28 +105,31 @@ int main()
 	while(i1.getIsRunning())
 	{
 		i1.readInput();
-		if(upper(i1.getFirstWord()) == "CREATE") {
+		if(i1.getIsRunning()) {
+			if(upper(i1.getFirstWord()) == "CREATE") {
 			// Create table
 			
 			// Gets second word (table)
 			auto pos = i1.getUserCommand().find(" ");
 			i1.getUserCommand().erase(0, pos + i1.getDelimiter().length());
 			pos = i1.getUserCommand().find(" ");
-
+			
 			// Gets third word (table name)
 			i1.getUserCommand().erase(0, pos + i1.getDelimiter().length());
 			pos = i1.getUserCommand().find(" ");
-
 			string tableName = i1.getUserCommand().substr(0, pos);
 
-			ofstream f(tableName + ".txt");
+			Table t1(tableName);
+			t1.createTable();
+			
+			
+			
 
 			// Read table
 			
 
-			f.close();
+			
+			}
 		}
 	}
-	
-	
 }
