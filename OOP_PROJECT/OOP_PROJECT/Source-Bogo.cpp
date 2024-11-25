@@ -28,7 +28,8 @@ private:
 	string delimiter = " "; //identify spaces between words
 	bool isRunning = true; 
 	string firstWord = "";
-
+	string secondWord = "";
+	string thirdWord = "";
 public:
 	
 	//in order to keep the code running
@@ -64,20 +65,32 @@ public:
 			// Bogdan's code
 			auto pos = userCommand.find(delimiter);
 			this->firstWord = userCommand.substr(0, pos);
-			cout << "First word is: " << this->firstWord << endl;
 
-			while (pos != string::npos) {
-				cout << userCommand.substr(0, pos) << " ";
-
-				userCommand.erase(0, pos + delimiter.length());
-				pos = userCommand.find(delimiter);
-				
-			}
-			pos = userCommand.find('\0');
-			//cout << userCommand.substr(0, pos) << " ";
-
-			cout << userCommand.substr(0, pos);
+			
+			// Getting second word
 			userCommand.erase(0, pos + delimiter.length());
+			pos = userCommand.find(delimiter);
+			this->secondWord = userCommand.substr(0, pos);
+
+			// Getting third word
+			userCommand.erase(0, pos + delimiter.length());
+			pos = userCommand.find(delimiter);
+			this->thirdWord = userCommand.substr(0, pos);
+
+			// cout << "First word is: " << this->firstWord << endl;
+
+			// while (pos != string::npos) {
+			// 	cout << userCommand.substr(0, pos) << " ";
+
+			// 	userCommand.erase(0, pos + delimiter.length());
+			// 	pos = userCommand.find(delimiter);
+				
+			// }
+			// pos = userCommand.find('\0');
+			// cout << userCommand.substr(0, pos) << " ";
+
+			// cout << userCommand.substr(0, pos);
+			// userCommand.erase(0, pos + delimiter.length());
 		}
 	}
 	// friend istream& operator>>(istream& in, Input& input) {
@@ -88,6 +101,8 @@ public:
 	inline string getFirstWord() {return this->firstWord;}
 	inline string getDelimiter() {return this->delimiter;}
 	inline string getUserCommand() {return this->userCommand;}
+	inline string getSecondWord() {return this->secondWord;}
+	inline string getThirdWord() {return this->thirdWord;}
 };
 
 // function to turn strings to uppercase
@@ -107,28 +122,18 @@ int main()
 		i1.readInput();
 		if(i1.getIsRunning()) {
 			if(upper(i1.getFirstWord()) == "CREATE") {
-			// Create table
-			
-			// Gets second word (table)
-			auto pos = i1.getUserCommand().find(" ");
-			i1.getUserCommand().erase(0, pos + i1.getDelimiter().length());
-			pos = i1.getUserCommand().find(" ");
-			
-			// Gets third word (table name)
-			i1.getUserCommand().erase(0, pos + i1.getDelimiter().length());
-			pos = i1.getUserCommand().find(" ");
-			string tableName = i1.getUserCommand().substr(0, pos);
 
-			Table t1(tableName);
-			t1.createTable();
-			
-			
-			
-
-			// Read table
-			
-
-			
+				if(upper(i1.getSecondWord()) != "TABLE")
+				{
+					cout << "Invalid command";
+				}
+				else {
+					Table t1(i1.getThirdWord());
+					t1.createTable();
+				}
+			}
+			else {
+				cout << "Invalid command.";
 			}
 		}
 	}
