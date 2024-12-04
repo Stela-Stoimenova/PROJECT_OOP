@@ -1,13 +1,18 @@
 #include <iostream>
 #include <string>
-#include <sstream>
 #include <vector>
 #include <regex>
 using namespace std;
 
+/*enum class columnType{
+    INT, FLOAT, VARCHAR, BOOL,
+    UNKNOWN //for unsupported or unrecognised types
+};*/
+
 struct Column {
     string name;
     string type;
+    //columnType type;
     int size;  //should i make it a string bc it is too complicated ????
     string defaultValue;
 };
@@ -15,6 +20,8 @@ struct Column {
 class Table {
 public:
     Table(const string& tableName) : name(tableName) {}
+
+    string getName() const {return name;}
 
     void addColumn(const string& columnName, const string& type, int size, const string& defaultValue) {
         columns.push_back({columnName, type, size, defaultValue});
@@ -42,12 +49,46 @@ public:
     void processCommand(const string& command) {
         if (command.find("CREATE TABLE") == 0) {
             CreateTable(command);
-        } else {
+        } else if (command.find("DROP TABLE") == 0) {
+            DropTable(command);
+            }
+            else {
             cout << "Error: Unknown command type.\n";
         }
     }
 
 private:
+vector<Table> tables;//stores all created tables
+
+//helper function for enum
+/*columnType parseColumnType(const string& typeStr)
+{
+if (typeStr == "int") return columnType::INT;
+  if (typeStr == "float") return columnType::FLOAT;
+  if (typeStr == "varchar") return columnType::VARCHAR;
+  if (typeStr == "bool") return columnType::BOOL;
+  return columnType::UNKNOWN;
+}
+
+string columnTypeToString(columnType type)
+{
+    switch (type)
+    {
+    case columnType::INT:
+    return "int";
+    case columnType::FLOAT:
+    return "float";
+    case columnType::VARCHAR:
+    return "varchar";
+    case columnType::BOOL:
+    return "bool";
+    
+    default:
+        return "uknown";
+    }
+}*/
+
+
     void CreateTable(const string& command) {
         string tableName;   
         vector<Column> columns;
@@ -60,28 +101,28 @@ private:
             smatch matches;
             if (regex_search(command, matches, createTableRegex)) {
                 tableName = matches[1];
-                string b = matches[2];
+                string columnDefinitions = matches[2];
 
                 
-                regex a(
+                regex columnRegex(
                     R"((\w+),\s*(\w+),\s*(\d+),\s*('?.*'?))"
                     
                 );
 
-                sregex_iterator begin(b.begin(), b.end(), a);
+                sregex_iterator begin(columnDefinitions.begin(), columnDefinitions.end(), columnRegex);
                 sregex_iterator end;
 
                 for (sregex_iterator it = begin; it != end; ++it) {
                     smatch match = *it;
                     string name = match[1];  
-    string type = match[2];  
-    int size = stoi(match[3]); // ??? should i make it a string ?? pls answer 
-    string defaultValue = match[4];
+                    string type = match[2];  
+                    int size = stoi(match[3]); // ??? should i make it a string ?? pls answer 
+                    string defaultValue = match[4];
                     
                     //basically it goes to 3 outputs, if there 3 commands, it[1] finds column name
                     //it[2]finds type int,float which is a string
                     //it[3] finds size.
-
+                    
                     columns.push_back({name, type, size, defaultValue});
                 }
 
@@ -89,13 +130,63 @@ private:
                     throw "No valid columns found.";
                 }
 
+                //check if the table already exists
+                for(const auto& table : tables)
+                {
+                    if(table.getName()==tableName)
+                    {
+                        cout<< "Error:  Table '"<<tableName<<"' already exists.\n";
+                        return;
+                    }
+                }
+                
+                //Create and store the new table
                 Table newTable(tableName);
                 for (const Column& col : columns) {
                     newTable.addColumn(col.name, col.type, col.size, col.defaultValue);
                 }
+
+                tables.push_back(newTable);
                 newTable.display();
             } else {
                 throw "Failed to parse command.";
+            }
+        } catch (const exception& e) {
+            cout << "Error: " << e.what() << endl;
+        } catch (const char* msg) {
+            cout << "Error: " << msg << endl;
+        }
+    }
+
+    void DropTable(const string& command) {
+        string tableName;
+
+        try {
+            regex dropTableRegex(R"(DROP TABLE (\w+))", regex::icase);
+            smatch matches;
+            if (regex_search(command, matches, dropTableRegex)) {
+                tableName = matches[1];
+
+                // Find the table in the vector
+                //auto-specifies that the type of the variable that is being declared
+                //will be automatically deducted from its initializer by the compiler
+                auto it=find_if(tables.begin(), tables.end(), [&](const Table& table)
+                {
+                    return table.getName()==tableName;
+                });
+
+                if(it!=tables.end())
+                {
+                    tables.erase(it);//remove the table
+                    cout<<"Table '"<<tableName<<"' does not exist.\n";
+                }
+                else {
+                    cout<<"Error: Table '"<<tableName<<"' does not exist.\n";
+                }
+    
+            
+            } else {
+                throw "Failed to parse DROP TABLE command.";
             }
         } catch (const exception& e) {
             cout << "Error: " << e.what() << endl;
