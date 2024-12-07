@@ -1,7 +1,9 @@
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <vector>
 #include <regex>
+
 using namespace std;
 
 /*enum class columnType{
@@ -39,6 +41,12 @@ public:
         }
     }
 
+    void createFile(const string& tableName) {
+        ofstream table(tableName + ".txt");
+        
+        table.close();
+    }
+
 private:
     string name;
     vector<Column> columns;
@@ -49,10 +57,17 @@ public:
     void processCommand(const string& command) {
         if (command.find("CREATE TABLE") == 0) {
             CreateTable(command);
-        } else if (command.find("DROP TABLE") == 0) {
+        } 
+        else if (command.find("DROP TABLE") == 0) {
             DropTable(command);
-            }
-            else {
+        }
+        else if (command.find("INSERT INTO") == 0) {
+            // Insert into command
+            cout << "Inserting into table";
+            InsertIntoTable(command);
+        }
+
+        else {
             cout << "Error: Unknown command type.\n";
         }
     }
@@ -101,6 +116,8 @@ string columnTypeToString(columnType type)
             smatch matches;
             if (regex_search(command, matches, createTableRegex)) {
                 tableName = matches[1];
+                
+
                 string columnDefinitions = matches[2];
 
                 
@@ -142,6 +159,7 @@ string columnTypeToString(columnType type)
                 
                 //Create and store the new table
                 Table newTable(tableName);
+                newTable.createFile(tableName);
                 for (const Column& col : columns) {
                     newTable.addColumn(col.name, col.type, col.size, col.defaultValue);
                 }
@@ -193,6 +211,10 @@ string columnTypeToString(columnType type)
         } catch (const char* msg) {
             cout << "Error: " << msg << endl;
         }
+    }
+
+    void InsertIntoTable(const string& command) {
+        
     }
 };
 
