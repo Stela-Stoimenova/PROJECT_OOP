@@ -17,6 +17,11 @@ public:
     // Constructor to initialize a column with its properties
     Column(const string& name, const string& type, int size, const string& defaultValue)
         : name(name), type(type), size(size), defaultValue(defaultValue) {}
+
+ //Diana- i have added this bc i need it for select
+        string getName() const { return name; }
+        //only this
+
 };
 
 class Row {
@@ -85,6 +90,16 @@ public:
         }
     }
 
+//Diana - I added the list that we previously had and create file bc we will need it later
+    vector<Column> getColumns() const { return columns; } 
+
+  void createFile(const string& tableName) {
+        ofstream table(tableName + ".txt");
+
+        table.close();
+    }
+// here it stops what I needed to add
+
     // Finds column index by name
     int findColumnIndex(const string& columnName) const {
         for (size_t i = 0; i < columns.size(); i++) {
@@ -131,6 +146,14 @@ public:
         else if (command.find("DELETE FROM") == 0) {
             deleteRecord(command); // Handle DELETE FROM command
         }
+        else if (command.find("SELECT *") == 0) {
+            SelectAllTable(command);
+        }
+
+        else if (command.find("SELECT") == 0) {
+            SelectTable(command);
+        }
+
         else {
             cout << "Error: Unknown command.\n";
         }
@@ -249,7 +272,20 @@ private:
 
                 tables.push_back(newTable); // Add the new table to the collection
                 cout << "Table '" << tableName << "' created successfully." << endl;
-                newTable.display(); // Display the table structure
+
+
+                
+                //I needed to make a better display table for SELECT
+                  newTable.createFile(tableName);
+                for (const Column& col : columns) {
+                    newTable.addColumn(col.name, col.type, col.size, col.defaultValue);
+                }
+
+                tables.push_back(newTable);
+                newTable.display();
+                
+                //the new display is here :)
+                
             }
             else {
                 cout << "Error: Invalid CREATE TABLE syntax." << endl;
@@ -347,6 +383,133 @@ private:
             cout << "Error: " << e.what() << endl;
         }
     }
+
+
+ void SelectAllTable(const string& command) {
+        try {
+            regex selectAllRegex(R"(SELECT\s\*\sFROM\s(\w+))", regex::icase);
+            smatch matches;
+
+            if (regex_search(command, matches, selectAllRegex)) {
+                string tableName = matches[1];
+                auto it = find_if(tables.begin(), tables.end(), [&](const Table& table) {
+                    return table.getName() == tableName;
+                    });
+
+                if (it != tables.end()) {
+                    Table& table = *it;
+                    cout << "Table: " << tableName << endl;
+
+                    for (const auto& col : table.getColumns()) {
+                        cout << "Column: " << col.getName() << endl;
+                    }
+                    table.display();
+                }
+                else {
+                    cout << "Error: Table '" << tableName << "' does not exist.\n";
+                }
+            }
+            else {
+                cout << "Error: Failed to parse SELECT * command." << endl;
+            }
+        }
+        catch (const exception& e) {
+            cout << "Error: " << e.what() << endl;
+        }
+    }
+
+   
+
+  
+        
+  
+
+
+
+  void SelectTable(const string& command) {
+     try {
+         regex SelectRegex(R"(SELECT\s*FROM\s(\w+)\s*(WHERE\s*(\w+)\s*=\s*'([^']+)'|\d+)?)", regex::icase);
+         // select space ALL optional space FROM space write anything space WHERE write anything = 
+         // ([^']+)'|\d+?  = it maches anything inside the ' 'single quotes ( name= 'student') 
+         // the second part (\d+?) matches the number without quotes  (name = student)
+         smatch matches;
+
+         if (regex_search(command, matches, SelectRegex)) {
+            string columnsPart = matches[0]; //where u either SELECT a column or ALL
+            string tableName = matches[1];  //from table
+            string WhereName = matches[2]; //where columnname = value  (the attribute from the column)
+            string WhereValue = matches[3]; //value
+
+
+            // check if the table exists
+            auto it = find_if(tables.begin(), tables.end(), [&](const Table& table) {
+                return table.getName() == tableName;
+                });
+
+            if (it == tables.end()) {
+                cout << "Error: Table '" << tableName << "' does not exist.\n";
+                return;
+            }
+
+            Table& table = *it;
+
+            // gata
+
+            // here i have to get everything that is in the column
+            // i added  vector<Column> getColumns() const { return columns; } inside the class Table
+            // this function is design to return the list of columns that belong to our table, therefore it has to be
+            //inside the table , not in the struct ( the struct represents just a basic structure that declares smth)
+            
+            
+            // getColumns returns a list(vector) of all Column objects
+
+             if (columnsPart == "ALL") {  //SELECT ALL FROM
+             cout << "Table: " << tableName << endl;
+             cout << "Columns: All\n";
+             for (const auto& col : table.getColumns()) {  
+                 cout << "Column: " << col.name << endl;
+             }
+         }
+         else {
+             // Process specific columns
+             stringstream ss(columnsPart.substr(1, columnsPart.size() - 2));  // remove parentheses
+             string column;
+             vector<string> columns;
+             while (getline(ss, column, ',')) {
+                 columns.push_back(column);
+             }
+
+             cout << "Table: " << tableName << endl;
+             cout << "Columns: " << columns.size() << endl;
+             for (const string& col : columns) {
+                 cout << "Column: " << col << endl;
+             }
+             table.display();
+         }
+
+             // Handle WHERE clause if present
+             if (!WhereName.empty()) {
+                 cout << "Filter: yes\n";
+                 cout << "Filter column: " << WhereName << " with value " << WhereValue << endl;
+             }
+             else {
+                 cout << "Filter: no\n";
+             }
+
+
+
+         }
+
+     }
+
+     catch (const exception& e) {
+         cout << "Error: " << e.what() << endl;
+     }
+     catch (const char* msg) {
+         cout << "Error: " << msg << endl;
+     }
+ }
+
 };
 
 // Entry point of the program
