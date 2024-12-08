@@ -88,7 +88,7 @@ public:
         }
         else if(command=="DELETE FROM") 
         {
-            deleteColumn(command);
+            deleteRecord(command);
         }
 
         else {
@@ -212,17 +212,30 @@ vector<Table> tables;//stores all created tables
         
     }
 
-    void deleteColumn(const string& command) {
+    void deleteRecord(const string& command) {
         
         try {
             string tableName;
-            string columnName;
-            regex deleteRegex( R"(DELETE\s*FROM\s(\w+)\s*(WHERE\s*(\w+)\s*=\s*'([^']+)'|\d+)?)" , regex::icase);
+            string conditionColumn;
+            string conditionValue;
+
+            // Regex to parse DELETE FROM command with optional WHERE clause
+            regex deleteRegex(R"(DELETE\s+FROM\s+(\w+)\s+WHERE\s+(\w+)\s*=\s*'?([^']+)'?)" , regex::icase);
             smatch deleteMatches;
 
             if (regex_search(command, deleteMatches, deleteRegex)) {
-                tableName = deleteMatches[0];
-                cout << tableName;
+                tableName = deleteMatches[1];
+                conditionColumn = deleteMatches[2];
+                conditionValue = deleteMatches[3];
+
+                // Find the table in the vector
+                auto tableIt = find_if(tables.begin(), tables.end(),
+                                    [&tableName](const Table& t) { return t.getName() == tableName; });
+
+                if (tableIt == tables.end()) {
+                    cout << "Error: Table '" << tableName << "' does not exist." << endl;
+                    return;
+                }
             }
         }
         catch (const exception& e){
