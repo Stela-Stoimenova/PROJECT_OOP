@@ -56,7 +56,10 @@ public:
 
     void createFile(const string& tableName) {
         ofstream table(tableName + ".txt");
-        
+        for(auto a = 0;a < columns.size();a++)
+        {
+            table << columns[a].name << " ";
+        }
         table.close();
     }
 
@@ -79,9 +82,13 @@ public:
             cout << "Inserting into table";
             InsertIntoTable(command);
         }
-         else if(command=="DISPLAY TABLES")
+        else if(command=="DISPLAY TABLES")
         {
             displayTables();
+        }
+        else if(command=="DELETE FROM") 
+        {
+            deleteColumn(command);
         }
 
         else {
@@ -115,6 +122,7 @@ vector<Table> tables;//stores all created tables
                     }
                 }
                 Table newTable(tableName);
+                tables.push_back(newTable);
                 // Regex to extract column definitions
                 regex columnRegex(
                     R"((\w+),\s*(\w+),\s*(\d+),\s*('?.*'?))"
@@ -139,22 +147,23 @@ vector<Table> tables;//stores all created tables
 
                 }
 
-                if (columns.empty()) {
-                    throw "No valid columns found.";
-                }
+                //if (columns.empty()) {
+                    //throw "No valid columns found.";
+                    //cout << "No valid columns found.";
+                //}
 
                 //check if the table already exists
-                for(const auto& table : tables)
-                {
-                    if(table.getName()==tableName)
-                    {
-                        cout<< "Error:  Table '"<<tableName<<"' already exists.\n";
-                        return;
-                    }
-                }
+                // for(const auto& table : tables)
+                // {
+                //     if(table.getName()==tableName)
+                //     {
+                //         cout<< "Error:  Table '"<<tableName<<"' already exists.\n";
+                //         return;
+                //     }
+                // }
                 
                 //Create and store the new table
-                Table newTable(tableName);
+                // Table newTable(tableName);
                 newTable.createFile(tableName);
                 for (const Column& col : columns) {
                     newTable.addColumn(col.name, col.type, col.size, col.defaultValue);
@@ -203,6 +212,24 @@ vector<Table> tables;//stores all created tables
         
     }
 
+    void deleteColumn(const string& command) {
+        
+        try {
+            string tableName;
+            string columnName;
+            regex deleteRegex( R"(DELETE\s*FROM\s(\w+)\s*(WHERE\s*(\w+)\s*=\s*'([^']+)'|\d+)?)" , regex::icase);
+            smatch deleteMatches;
+
+            if (regex_search(command, deleteMatches, deleteRegex)) {
+                tableName = deleteMatches[0];
+                cout << tableName;
+            }
+        }
+        catch (const exception& e){
+            cout << "Error: " << e.what() << endl;
+        }
+    }
+
     void displayTables()
     {
         if(tables.empty())
@@ -225,6 +252,7 @@ int main() {
     Processor processor;
 
     string command;
+
     while (true) {
         cout << "\nEnter command (or type 'EXIT' to quit): ";
         getline(cin, command);
