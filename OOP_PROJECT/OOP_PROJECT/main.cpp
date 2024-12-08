@@ -1,118 +1,218 @@
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <regex>
+#include <iostream>  // For input-output operations
+#include <fstream>   // For file handling (not used in this code but included for potential future use)
+#include <string>    // For handling strings
+#include <vector>    // For using dynamic arrays (vectors)
+#include <regex>     // For regular expressions to parse SQL-like commands
 
 using namespace std;
 
+// Represents a column in a table
+class Column {
+public:
+    string name;          // The name of the column
+    string type;          // The data type of the column (e.g., integer, text)
+    int size;             // The maximum size of the column
+    string defaultValue;  // The default value for the column
 
-struct Column {
-    string name;
-    string type;
-    //columnType type;
-    int size;  
-    string defaultValue;
-      public:
-    // Constructor
+    // Constructor to initialize a column with its properties
     Column(const string& name, const string& type, int size, const string& defaultValue)
         : name(name), type(type), size(size), defaultValue(defaultValue) {}
-
-    // Getters
-    string getName() const { return name; }
-    string getType() const { return type; }
-    int getSize() const { return size; }
-    string getDefaultValue() const { return defaultValue; }
-
-    // Setters
-    void setName(const string& newName) { name = newName; }
-    void setType(const string& newType) { type = newType; }
-    void setSize(int newSize) { size = newSize; }
-    void setDefaultValue(const string& newValue) { defaultValue = newValue; }
-
 };
 
-class Table {
+class Row {
 public:
-    Table(const string& tableName) : name(tableName) {}
+    vector<string> values; // values of the columns in a row
 
-    string getName() const {return name;}
+    // Constructor to initialize the row with the given values
+    Row(const vector<string>& values) : values(values) {}
 
-    void addColumn(const string& columnName, const string& type, int size, const string& defaultValue) {
-        columns.push_back({columnName, type, size, defaultValue});
+    // Method to update a specific column value in the row
+    void updateColumn(int columnIndex, const string& newValue) {
+        if (columnIndex >= 0 && columnIndex < values.size()) {
+            values[columnIndex] = newValue;
+        }
     }
 
+    // Method to get the value of a specific column
+    string getColumnValue(int columnIndex) const {
+        if (columnIndex >= 0 && columnIndex < values.size()) {
+            return values[columnIndex];
+        }
+        return "";
+    }
+};
+
+// Represents a table, which contains a name and a list of columns
+class Table {
+public:
+    string name; // The name of the table
+    vector<Column> columns; // A list of columns in the table
+    vector<Row> rows; // A list of rows in the table
+
+    // Constructor to initialize a table with a name
+    Table(const string& tableName) : name(tableName) {}
+
+    // Adds a new column to the table
+    void addColumn(const string& columnName, const string& type, int size, const string& defaultValue) {
+        columns.emplace_back(columnName, type, size, defaultValue); // Add a column to the vector
+    }
+
+    // Adds a new row to the table
+    void addRow(const vector<string>& rowValues) {
+        rows.emplace_back(rowValues);
+    }
+
+    // Returns the name of the table
+    string getName() const { return name; }
+
+    // Displays the structure of the table
     void display() const {
         cout << "Table: " << name << endl;
         cout << "Columns: " << columns.size() << endl;
         for (size_t i = 0; i < columns.size(); ++i) {
-            cout << "Column " << i + 1 << ":\n";
-            cout << "  Name: " << columns[i].name << endl;
-            cout << "  Type: " << columns[i].type << endl;
-            cout << "  Dimension: " << columns[i].size << endl;
-            cout << "  Default: " << columns[i].defaultValue << endl;
+            cout << "  Column " << i + 1 << ":\n"
+                 << "    Name: " << columns[i].name << endl
+                 << "    Type: " << columns[i].type << endl
+                 << "    Size: " << columns[i].size << endl
+                 << "    Default: " << columns[i].defaultValue << endl;
+        }
+        cout << "Rows: " << rows.size() << endl;
+        for (const auto& row : rows) {
+            for (const auto& value : row.values) {
+                cout << value << " ";
+            }
+            cout << endl;
         }
     }
 
-    void createFile(const string& tableName) {
-        ofstream table(tableName + ".txt");
-        for(auto a = 0;a < columns.size();a++)
-        {
-            table << columns[a].name << " ";
+    // Finds column index by name
+    int findColumnIndex(const string& columnName) const {
+        for (size_t i = 0; i < columns.size(); i++) {
+            if (columns[i].name == columnName) {
+                return i;
+            }
         }
-        table.close();
+        return -1; // Column not found
     }
 
-private:
-    string name;
-    vector<Column> columns;
+    // Finds rows that match WHERE clause condition
+    vector<int> findRowsWhere(const string& whereColumn, const string& whereValue) const {
+        int columnIndex = findColumnIndex(whereColumn);
+        vector<int> matchingRows;
+
+        if (columnIndex != -1) {
+            for (size_t i = 0; i < rows.size(); ++i) {
+                if (rows[i].getColumnValue(columnIndex) == whereValue) {
+                    matchingRows.push_back(i);
+                }
+            }
+        }
+        return matchingRows;
+    }
 };
 
+// Processes SQL-like commands to manage tables
 class Processor {
 public:
+    // Processes a single command input by the user
     void processCommand(const string& command) {
         if (command.find("CREATE TABLE") == 0) {
-            CreateTable(command);
-        } 
+            createTable(command); // Handle CREATE TABLE command
+        }
         else if (command.find("DROP TABLE") == 0) {
-            DropTable(command);
+            dropTable(command);   // Handle DROP TABLE command
         }
-        else if (command.find("INSERT INTO") == 0) {
-            // Insert into command
-            cout << "Inserting into table";
-            InsertIntoTable(command);
+        else if (command.find("UPDATE") == 0) {
+            updateTable(command); // Handle UPDATE command
         }
-        else if(command=="DISPLAY TABLES")
-        {
-            displayTables();
+        else if (command == "DISPLAY TABLES") {
+            displayTables();      // Handle DISPLAY TABLES command
         }
-        else if(command=="DELETE FROM") 
-        {
-            deleteRecord(command);
+        else if (command.find("DELETE FROM") == 0) {
+            deleteRecord(command); // Handle DELETE FROM command
         }
-
         else {
-            cout << "Error: Unknown command type.\n";
+            cout << "Error: Unknown command.\n";
         }
     }
 
 private:
-vector<Table> tables;//stores all created tables
+    vector<Table> tables; // A collection of tables managed by the processor
 
-
-    void CreateTable(const string& command) {
-        string tableName;   
-        vector<Column> columns;
-
+    // Update table based on the UPDATE command
+    void updateTable(const string& command) {
         try {
-            regex createTableRegex(
-                R"(CREATE TABLE (\w+)\s*\((.*)\))",
+            // Regex to validate and parse the UPDATE command
+            regex updateRegex(
+                R"(UPDATE\s+(\w+)\s+SET\s+(\w+)\s*=\s*\"?(.+?)\"?\s+WHERE\s+(\w+)\s*=\s*\"?(.+?)\"?)",
                 regex::icase
             );
             smatch matches;
+
+            if (!regex_search(command, matches, updateRegex)) {
+                cout << "Error: Invalid UPDATE syntax." << endl;
+                return;
+            }
+
+            string tableName = matches[1]; // Extract table name
+            string columnToSet = matches[2]; // Extract column to update
+            string newValue = matches[3]; // Extract new value
+            string whereColumn = matches[4]; // Extract WHERE column
+            string whereValue = matches[5]; // Extract WHERE value
+
+            // Find the table
+            auto tableIt = find_if(tables.begin(), tables.end(), [&tableName](const Table& t) {
+                return t.getName() == tableName;
+            });
+
+            if (tableIt == tables.end()) {
+                cout << "Error: Table '" << tableName << "' does not exist." << endl;
+                return;
+            }
+
+            // Validate the column to be updated
+            int columnIndex = tableIt->findColumnIndex(columnToSet);
+            if (columnIndex == -1) {
+                cout << "Error: Column '" << columnToSet << "' does not exist in table '" << tableName << "'." << endl;
+                return;
+            }
+
+            // Validate the WHERE column
+            vector<int> matchingRows = tableIt->findRowsWhere(whereColumn, whereValue);
+            if (matchingRows.empty()) {
+                cout << "Error: No rows found matching the filter condition." << endl;
+                return;
+            }
+
+            // Apply the update to each matching row
+            for (int rowIndex : matchingRows) {
+                auto& row = tableIt->rows[rowIndex];
+                row.updateColumn(columnIndex, newValue);  // Update the column value
+            }
+
+            cout << "Rows updated successfully." << endl;
+        }
+        catch (const exception& e) {
+            cout << "Error: " << e.what() << endl;
+        }
+    }
+
+    // Creates a new table based on the CREATE TABLE command
+    void createTable(const string& command) {
+        string tableName;
+        vector<Column> columns;
+
+        try {
+            // Regular expression to parse the CREATE TABLE command
+            regex createTableRegex(
+                R"(CREATE TABLE (\w+)\s*\((.+)\))",
+                regex::icase // Case-insensitive matching
+            );
+            smatch matches;
+
             if (regex_search(command, matches, createTableRegex)) {
-                tableName = matches[1];
-                string columnDefinitions = matches[2];
+                tableName = matches[1]; // Extract the table name
+                string columnDefinitions = matches[2]; // Extract the column definitions
 
                 // Check if the table already exists
                 for (const auto& table : tables) {
@@ -121,162 +221,150 @@ vector<Table> tables;//stores all created tables
                         return;
                     }
                 }
-                Table newTable(tableName);
-                tables.push_back(newTable);
-                // Regex to extract column definitions
-                regex columnRegex(
-                    R"((\w+),\s*(\w+),\s*(\d+),\s*('?.*'?))"
-                    
-                );
 
+                Table newTable(tableName); // Create a new table object
+
+                // Regular expression to extract individual column definitions
+                regex columnRegex(
+                    R"(\s*(\w+)\s*,\s*(\w+)\s*,\s*(\d+)\s*,\s*'?(.+?)'?\s*)"
+                );
                 sregex_iterator begin(columnDefinitions.begin(), columnDefinitions.end(), columnRegex);
                 sregex_iterator end;
 
-                for (auto it = begin; it != end; ++it) {
+                if (begin == end) {
+                    cout << "Error: No valid columns found." << endl;
+                    return;
+                }
+
+                // Parse each column and add it to the table
+                for (sregex_iterator it = begin; it != end; ++it) {
                     smatch columnMatch = *it;
-                    string colName = columnMatch[1];  
-                    string colType = columnMatch[2];  
-                    int colSize = stoi(columnMatch[3]); 
-                    string defaultValue = columnMatch[4];
-                    
-                    //basically it goes to 3 outputs, if there 3 commands, it[1] finds column name
-                    //it[2]finds type int,float which is a string
-                    //it[3] finds size.
-                    
+                    string colName = columnMatch[1]; // Column name
+                    string colType = columnMatch[2]; // Column type
+                    int colSize = stoi(columnMatch[3]); // Column size
+                    string defaultValue = columnMatch[4]; // Default value
+
                     newTable.addColumn(colName, colType, colSize, defaultValue);
-
                 }
 
-                //if (columns.empty()) {
-                    //throw "No valid columns found.";
-                    //cout << "No valid columns found.";
-                //}
-
-                //check if the table already exists
-                // for(const auto& table : tables)
-                // {
-                //     if(table.getName()==tableName)
-                //     {
-                //         cout<< "Error:  Table '"<<tableName<<"' already exists.\n";
-                //         return;
-                //     }
-                // }
-                
-                //Create and store the new table
-                // Table newTable(tableName);
-                newTable.createFile(tableName);
-                for (const Column& col : columns) {
-                    newTable.addColumn(col.name, col.type, col.size, col.defaultValue);
-                }
-
-                tables.push_back(newTable);
-                newTable.display();
-            } else {
-                throw "Error: Invalid CREATE TABLE syntax.";
+                tables.push_back(newTable); // Add the new table to the collection
+                cout << "Table '" << tableName << "' created successfully." << endl;
+                newTable.display(); // Display the table structure
             }
-        } catch (const exception& e) {
+            else {
+                cout << "Error: Invalid CREATE TABLE syntax." << endl;
+            }
+        }
+        catch (const exception& e) {
             cout << "Error: " << e.what() << endl;
-        } 
+        }
     }
 
-    void DropTable(const string& command) {
+    // Drops (deletes) a table based on the DROP TABLE command
+    void dropTable(const string& command) {
         string tableName;
 
         try {
+            // Regular expression to parse the DROP TABLE command
             regex dropTableRegex(R"(DROP TABLE (\w+))", regex::icase);
             smatch matches;
-            if (regex_search(command, matches, dropTableRegex)) {
-                tableName = matches[1];
 
-                // Find the table in the vector
-                //auto-specifies that the type of the variable that is being declared
-                //will be automatically deducted from its initializer by the compiler
-                 for (auto it = tables.begin(); it != tables.end(); ++it) {
-                    if (it->getName() == tableName) {
-                        tables.erase(it);
-                        cout << "Table '" << tableName << "' dropped successfully." << endl;
-                        return;
-                    }
+            if (regex_search(command, matches, dropTableRegex)) {
+                tableName = matches[1]; // Extract the table name
+
+                // Find and erase the table from the collection
+                auto it = find_if(tables.begin(), tables.end(), [&tableName](const Table& t) {
+                    return t.getName() == tableName;
+                });
+                if (it != tables.end()) {
+                    tables.erase(it);
+                    cout << "Table '" << tableName << "' dropped successfully." << endl;
+                } else {
+                    cout << "Error: Table '" << tableName << "' does not exist." << endl;
                 }
-                cout << "Error: Table '" << tableName << "' does not exist." << endl;
-            } else {
+            }
+            else {
                 cout << "Error: Invalid DROP TABLE syntax." << endl;
             }
-        } catch (const exception& e) {
+        }
+        catch (const exception& e) {
             cout << "Error: " << e.what() << endl;
         }
-
     }
 
-    void InsertIntoTable(const string& command) {
-        
+    // Displays the names of all existing tables
+    void displayTables() {
+        if (tables.empty()) {
+            cout << "No tables exist." << endl;
+        } else {
+            cout << "Existing tables:" << endl;
+            for (const auto& table : tables) {
+                cout << " - " << table.getName() << endl;
+            }
+        }
     }
 
+    // Deletes records from the table based on the DELETE command
     void deleteRecord(const string& command) {
-        
         try {
-            string tableName;
-            string conditionColumn;
-            string conditionValue;
-
             // Regex to parse DELETE FROM command with optional WHERE clause
-            regex deleteRegex(R"(DELETE\s+FROM\s+(\w+)\s+WHERE\s+(\w+)\s*=\s*'?([^']+)'?)" , regex::icase);
+            regex deleteRegex(R"(DELETE\s+FROM\s+(\w+)\s+WHERE\s+(\w+)\s*=\s*'?([^']+)'?)", regex::icase);
             smatch deleteMatches;
 
             if (regex_search(command, deleteMatches, deleteRegex)) {
-                tableName = deleteMatches[1];
-                conditionColumn = deleteMatches[2];
-                conditionValue = deleteMatches[3];
+                string tableName = deleteMatches[1];
+                string conditionColumn = deleteMatches[2];
+                string conditionValue = deleteMatches[3];
 
                 // Find the table in the vector
-                auto tableIt = find_if(tables.begin(), tables.end(),
-                                    [&tableName](const Table& t) { return t.getName() == tableName; });
-
+                auto tableIt = find_if(tables.begin(), tables.end(), [&tableName](const Table& t) {
+                    return t.getName() == tableName;
+                });
                 if (tableIt == tables.end()) {
                     cout << "Error: Table '" << tableName << "' does not exist." << endl;
                     return;
                 }
+
+                // Find rows that match the condition
+                vector<int> matchingRows = tableIt->findRowsWhere(conditionColumn, conditionValue);
+                if (matchingRows.empty()) {
+                    cout << "Error: No rows found matching the condition." << endl;
+                    return;
+                }
+
+                // Delete matching rows
+                for (int rowIndex : matchingRows) {
+                    tableIt->rows.erase(tableIt->rows.begin() + rowIndex);
+                }
+
+                cout << "Rows deleted successfully." << endl;
+            }
+            else {
+                cout << "Error: Invalid DELETE syntax." << endl;
             }
         }
-        catch (const exception& e){
+        catch (const exception& e) {
             cout << "Error: " << e.what() << endl;
         }
     }
-
-    void displayTables()
-    {
-        if(tables.empty())
-        {
-            cout<<"No tables exist."<<endl;
-        }
-        else
-        {
-           cout<<"Existing tables:"<<endl;
-           for(const auto& table:tables)
-           {
-            cout<<" - "<<table.getName()<<endl;
-           }
-        }
-    }
-
 };
 
+// Entry point of the program
 int main() {
-    Processor processor;
-
+    Processor processor; // Create an instance of the Processor class
     string command;
 
     while (true) {
         cout << "\nEnter command (or type 'EXIT' to quit): ";
-        getline(cin, command);
+        getline(cin, command); // Get the user's command
 
-        if (command == "EXIT") {
+        if (command == "EXIT") { // Exit the program if the user types 'EXIT'
             cout << "Exiting program." << endl;
             break;
         }
 
-        processor.processCommand(command);
+        processor.processCommand(command); // Process the user's command
     }
 
-    return 0;
+    return 0; // Indicate successful program termination
 }
