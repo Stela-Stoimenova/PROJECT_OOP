@@ -423,28 +423,23 @@ private:
   
         
   
+void SelectTable(const string& command) {
+    try {
+        // Regex for SELECT command with optional WHERE clause
+        regex selectRegex(R"(SELECT\s+([^\s]+|\)\s+FROM\s+(\w+)(\s+WHERE\s+(\w+)\s=\s*'?([^']*)'?)?)", regex::icase);
+        smatch matches;
 
+        if (regex_search(command, matches, selectRegex)) {
+            string columnsPart = matches[1]; // Columns to select
+            string tableName = matches[2];  // Table name
+            string whereClause = matches[3]; // Optional WHERE clause
+            string whereColumn = matches[4]; // Column in WHERE
+            string whereValue = matches[5]; // Value in WHERE
 
-
-  void SelectTable(const string& command) {
-     try {
-         regex SelectRegex(R"(SELECT\s*FROM\s(\w+)\s*(WHERE\s*(\w+)\s*=\s*'([^']+)'|\d+)?)", regex::icase);
-         // select space ALL optional space FROM space write anything space WHERE write anything = 
-         // ([^']+)'|\d+?  = it maches anything inside the ' 'single quotes ( name= 'student') 
-         // the second part (\d+?) matches the number without quotes  (name = student)
-         smatch matches;
-
-         if (regex_search(command, matches, SelectRegex)) {
-            string columnsPart = matches[0]; //where u either SELECT a column or ALL
-            string tableName = matches[1];  //from table
-            string WhereName = matches[2]; //where columnname = value  (the attribute from the column)
-            string WhereValue = matches[3]; //value
-
-
-            // check if the table exists
+            // Find the table
             auto it = find_if(tables.begin(), tables.end(), [&](const Table& table) {
                 return table.getName() == tableName;
-                });
+            });
 
             if (it == tables.end()) {
                 cout << "Error: Table '" << tableName << "' does not exist.\n";
@@ -453,62 +448,57 @@ private:
 
             Table& table = *it;
 
-            // gata
+            // Parse selected attributes
+            vector<string> selectedAttributes;
+            if (columnsPart != "*") {
+                stringstream ss(columnsPart);
+                string attribute;
+                while (getline(ss, attribute, ',')) {
+                    selectedAttributes.push_back(attribute);
+                }
+            }
 
-            // here i have to get everything that is in the column
-            // i added  vector<Column> getColumns() const { return columns; } inside the class Table
-            // this function is design to return the list of columns that belong to our table, therefore it has to be
-            //inside the table , not in the struct ( the struct represents just a basic structure that declares smth)
-            
-            
-            // getColumns returns a list(vector) of all Column objects
+            // Match attributes to column properties
+            vector<string> outputResults;
+            for (const string& attr : selectedAttributes) {
+                bool found = false;
+                for (const Column& col : table.columns) {
+                    if (attr == "name" && !col.name.empty()) {
+                        outputResults.push_back(attr + ": " + col.name);
+                        found = true;
+                    } else if (attr == "type" && !col.type.empty()) {
+                        outputResults.push_back(attr + ": " + col.type);
+                        found = true;
+                    } else if (attr == "size") {
+                        outputResults.push_back(attr + ": " + to_string(col.size));
+                        found = true;
+                    } else if (attr == "default" && !col.defaultValue.empty()) {
+                        outputResults.push_back(attr + ": " + col.defaultValue);
+                        found = true;
+                    }
+                }
+                if (!found) {
+                    cout << "Error: Attribute '" << attr << "' does not exist in table '" << tableName << "'.\n";
+                    return;
+                }
+            }
 
-             if (columnsPart == "ALL") {  //SELECT ALL FROM
-             cout << "Table: " << tableName << endl;
-             cout << "Columns: All\n";
-             for (const auto& col : table.getColumns()) {  
-                 cout << "Column: " << col.name << endl;
-             }
-         }
-         else {
-             // Process specific columns
-             stringstream ss(columnsPart.substr(1, columnsPart.size() - 2));  // remove parentheses
-             string column;
-             vector<string> columns;
-             while (getline(ss, column, ',')) {
-                 columns.push_back(column);
-             }
-
-             cout << "Table: " << tableName << endl;
-             cout << "Columns: " << columns.size() << endl;
-             for (const string& col : columns) {
-                 cout << "Column: " << col << endl;
-             }
-             table.display();
-         }
-
-             // Handle WHERE clause if present
-             if (!WhereName.empty()) {
-                 cout << "Filter: yes\n";
-                 cout << "Filter column: " << WhereName << " with value " << WhereValue << endl;
-             }
-             else {
-                 cout << "Filter: no\n";
-             }
-
+            // Display results
+            cout << "Table: " << tableName << endl;
+            for (const string& result : outputResults) {
+                cout << result << endl;
+            }
+        } else {
+            cout << "Error: Invalid SELECT syntax.\n";
+        }
+    } catch (const exception& e) {
+        cout << "Error: " << e.what() << endl;
+    } catch (const char* msg) {
+        cout << "Error: " << msg << endl;
+    }
+}
 
 
-         }
-
-     }
-
-     catch (const exception& e) {
-         cout << "Error: " << e.what() << endl;
-     }
-     catch (const char* msg) {
-         cout << "Error: " << msg << endl;
-     }
- }
 
 };
 
